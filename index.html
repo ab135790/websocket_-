@@ -1,0 +1,155 @@
+<!--
+ * @Author: your name
+ * @Date: 2020-05-27 13:58:25
+ * @LastEditTime: 2020-05-28 17:10:51
+ * @LastEditors: Please set LastEditors
+ * @Description: Websocket 鉴权 -> 
+ *  1.协议本身在握手阶段不提供鉴权方案
+ *  2.浏览器侧：url传参，message主动消息，session/cookie 三种方式;
+ *  3.Nodej侧：直接使用ws传Headers
+ * @FilePath: \demo\client\index.html
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.staticfile.org/vue/2.6.11/vue.min.js"></script>
+</head>
+<body>
+
+    <div id="app">
+        <div v-if="isShow">
+            <p>昵称：<input type="text" v-model="name"></p>
+            <p>房间号：<input type="text" v-model="roomid"></p>
+            <button type="button" @click="enter()">进入聊天室</button>
+        </div>
+        <div v-else>
+            <ul>
+                <li v-for="(item, index) in lists" :key="'item' + index">{{item}}</li>
+                <li>在线人数:{{num}}人</li>
+            </ul>
+            <div class="ctrl">
+                <!-- 输入框 -->
+                <input type="text" v-model="message">
+                <button type="button" @click="send()">按钮</button>
+                <button type="button" @click="close()">关闭按钮</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        
+        var app = new Vue({
+            el: '#app',
+            data: {
+                message: '',
+                lists: [],
+                ws: {},
+                name: '',
+                isShow: true,
+                num: 0,
+                roomid: ''
+            },
+            mounted() {
+                this.ws = new WebSocket('ws://127.0.0.1:3000');
+                this.ws.onopen = this.opOpen
+                this.ws.onmessage = this.onMessage
+                this.ws.onclose = this.onClose
+                this.ws.onerror = this.onError
+            },
+            methods: {
+                enter: function() {
+                    if (this.name.trim() === '') {
+                        alert('用户名不得为空')
+                        return
+                    }
+                    this.isShow = false;
+                    this.ws.send(JSON.stringify({
+                        event: 'enter',
+                        message: this.name,
+                        roomid: this.roomid
+                    }))
+                },
+                opOpen: function () {
+                    // ws.send('hello from client!');
+                    console.log('onopen:' + this.ws.readyState);
+                    // 发起鉴权请求
+                    this.ws.send(JSON.stringify({
+                        event: 'auth',
+                        message: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6Imltb29jIiwiaWF0IjoxNTE2MjM5MDIyfQ.KQv-KO2KRPtFP1Hl9h3qyxiko8Czz_7vWVm-5JcyP7k'
+                    }))
+                },
+                onMessage: function (event) {
+                    console.log(event.data);
+                    // 当用户不进入聊天室，则不接收消息
+                    if (this.isShow) return;
+                    var obj = JSON.parse(event.data);
+                    if (obj.event === 'noauth') {
+                        // 鉴权失败
+                        // 路由跳转到 /login  重新获取token
+                    }
+                    if (obj.event === 'enter') {
+                        this.lists.push('欢迎：' + obj.message + '加入聊天室!');
+                    } else if (obj.event === 'out'){
+                        this.lists.push(obj.name + '已经退出了聊天室!')
+                    } else {
+                        if (obj.name !== this.name) {
+                            this.lists.push(obj.name + ':' + obj.message);
+                        }
+                    }
+                    this.num = obj.num;
+                },
+                onclose: function() {
+                    console.log('close:' + this.ws.readyState);
+                    console.log('已关闭websocket');
+                },
+                onError: function() {
+                    console.log('error' + this.ws.readyState);
+                    console.log('webSocket连接失败');
+                },
+                send: function() {
+                    this.lists.push(this.name + ':' + this.message);
+                    this.ws.send(JSON.stringify({
+                        event: 'message',
+                        message: this.message,
+                        name: this.name
+                    }));
+                    this.message = '';
+                },
+                close: function() {
+                    this.ws.close();
+                }
+            }
+        })
+        // var ws = new WebSocket('ws://127.0.0.1:3000')
+        // ws.onopen = function() {
+            
+        // }
+        // ws.onmessage = function(event) {
+        //     console.log(event.data);
+        // }
+        // 当链接主动断开道德时候触发close事件
+        // ws.onclose = function() {
+        //     console.log('close:' + ws.readyState);
+        //     console.log('已关闭websocket');
+        // }
+        // 当连接失败时，触发error事件
+        // ws.onerror = function() {
+        //     console.log('error' + ws.readyState);
+        //     console.log('webSocket连接失败');
+        // }
+        // 发送消息
+        // document.getElementById('send').addEventListener('click', function() {
+        //     var inputValue = document.getElementById('msg').value;
+        //     ws.send(inputValue);
+        //     document.getElementById('msg').value = '';
+        // })
+        // 关闭连接
+        // document.getElementById('closebtn').addEventListener('click', function() {
+        //     ws.close();
+        // })
+    </script>
+</body>
+</html>
