@@ -7,8 +7,8 @@
  * @FilePath: \WebSocketDemo\server\src\config\index.js
  */
 const REDIS = {
-    host: '106.55.147.49',
-    port: 10024,
+    host: 'localhost',
+    port: 6379,
     password: '123456'
 };
 
