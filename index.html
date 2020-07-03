@@ -3,7 +3,7 @@
  * @Date: 2020-05-27 13:58:25
  * @LastEditTime: 2020-05-29 17:26:47
  * @LastEditors: Please set LastEditors
- * @Description: Websocket 鉴权 -> 
+ * @Description: Websocket 鉴权 ->
  *  1.协议本身在握手阶段不提供鉴权方案
  *  2.浏览器侧：url传参，message主动消息，session/cookie 三种方式;
  *  3.Nodej侧：直接使用ws传Headers
@@ -24,6 +24,7 @@
     <div id="app">
         <div v-if="isShow">
             <p>昵称：<input type="text" v-model="name"></p>
+            <p>uid：<input type="text" v-model="uid"></p>
             <p>房间号：<input type="text" v-model="roomid"></p>
             <button type="button" @click="enter()">进入聊天室</button>
         </div>
@@ -53,19 +54,20 @@
                 isShow: true,
                 num: 0,
                 roomid: '',
-                handle: {}
+                handle: {},
+                uid: ''
             },
             methods: {
                 init() {
                     this.ws = new WebSocket('ws://127.0.0.1:3000');
-                    this.ws.onopen = this.opOpen
-                    this.ws.onmessage = this.onMessage
-                    this.ws.onclose = this.onClose
-                    this.ws.onerror = this.onError
+                    this.ws.onopen = this.opOpen;
+                    this.ws.onmessage = this.onMessage;
+                    this.ws.onclose = this.onClose;
+                    this.ws.onerror = this.onError;
                 },
                 enter: function () {
                     if (this.name.trim() === '') {
-                        alert('用户名不得为空')
+                        alert('用户名不得为空');
                         return
                     }
                     this.init();
@@ -76,12 +78,13 @@
                     this.ws.send(JSON.stringify({
                         event: 'auth',
                         message: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6Imltb29jIiwiaWF0IjoxNTE2MjM5MDIyfQ.KQv-KO2KRPtFP1Hl9h3qyxiko8Czz_7vWVm-5JcyP7k'
-                    }))
+                    }));
                     // 发送判断进入的房间和用户
                     this.ws.send(JSON.stringify({
                         event: 'enter',
                         message: this.name,
-                        roomid: this.roomid
+                        roomid: this.roomid,
+                        uid: this.uid
                     }))
                 },
                 onMessage: function (event) {
@@ -98,14 +101,14 @@
                             this.lists.push('欢迎：' + obj.message + '加入聊天室!');
                             break;
                         case 'out':
-                            this.lists.push(obj.name + '已经退出了聊天室!')
+                            this.lists.push(obj.name + '已经退出了聊天室!');
                             break;
                         case 'heartbeat':
                             this.checkServer();
                             this.ws.send(JSON.stringify({
                                 event: 'heartbeat',
                                 message: 'pong'
-                            }))
+                            }));
                             break;
                         default:
                             if (obj.name !== this.name) {
@@ -125,7 +128,7 @@
                     // 连接失败之后，1s进行断线重连
                     let _this = this;
                     setTimeout(function() {
-                        _this.init()
+                        _this.init();
                     }, 1000)
                 },
                 send: function () {
@@ -146,7 +149,7 @@
                         setTimeout(() => {
                             _this.init();
                         }, 1000);
-                    }, 1000 + 1);
+                    }, 30000 + 1000);
                 },
                 close: function () {
                     this.ws.close();
