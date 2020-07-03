@@ -2,16 +2,18 @@
   "name": "server",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
-    "start": "nodemon index.js"
+    "start": "nodemon src/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bluebird": "^3.7.2",
     "jsonwebtoken": "^8.5.1",
     "nodemailer": "^6.4.6",
+    "redis": "^3.0.2",
     "ws": "^7.3.0"
   },
   "devDependencies": {
